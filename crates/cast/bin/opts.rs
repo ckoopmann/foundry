@@ -859,6 +859,18 @@ pub enum Subcommands {
     /// Decodes a raw signed EIP 2718 typed transaction
     #[clap(visible_alias = "dt")]
     DecodeTransaction { tx: Option<String> },
+
+    /// Get the storage slot of a given variable
+    #[clap(visible_alias = "sts")]
+    StorageSlot {
+        /// The contract's address.
+        address: String,
+
+        #[clap(flatten)]
+        etherscan: EtherscanOpts,
+    },
+
+
 }
 
 /// CLI arguments for `cast --to-base`.
