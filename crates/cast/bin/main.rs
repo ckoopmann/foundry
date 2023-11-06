@@ -7,8 +7,11 @@ use ethers::{
     providers::Middleware,
 };
 use eyre::Result;
-use foundry_cli::{handler, prompt, stdin, utils};
-use foundry_cli::opts::{CompilerArgs, CoreBuildArgs};
+use foundry_cli::{
+    handler,
+    opts::{CompilerArgs, CoreBuildArgs},
+    prompt, stdin, utils,
+};
 use foundry_common::{
     abi::get_event,
     compile,
@@ -19,12 +22,12 @@ use foundry_common::{
         parse_signatures, pretty_calldata, ParsedSignatures, SelectorImportData,
     },
 };
-use foundry_compilers::artifacts::output_selection::ContractOutputSelection;
-use foundry_compilers::{info::ContractInfo, utils::canonicalize};
+use foundry_compilers::{
+    artifacts::output_selection::ContractOutputSelection, info::ContractInfo, utils::canonicalize,
+};
 use foundry_config::Config;
 use foundry_utils::types::{ToAlloy, ToEthers};
-use std::{path::PathBuf, str::FromStr};
-use std::time::Instant;
+use std::{path::PathBuf, str::FromStr, time::Instant};
 
 pub mod cmd;
 pub mod opts;
@@ -509,17 +512,23 @@ async fn main() -> Result<()> {
             });
 
             println!("{}", serde_json::to_string_pretty(&tx)?);
-        },
+        }
         Subcommands::StorageSlot { address, etherscan } => {
             let config = Config::from(&etherscan);
             let chain = config.chain_id.unwrap_or_default();
             let api_key = config.get_etherscan_api_key(Some(chain)).unwrap_or_default();
             let chain = chain.named()?;
             let cache_dir = PathBuf::from("./storage_slot_cache");
-            if !cache_dir.exists()  {
+            if !cache_dir.exists() {
                 fs::create_dir_all(&cache_dir)?;
             }
-            let meta = SimpleCast::expand_etherscan_source_to_directory_and_return_metadata(chain, address, api_key, cache_dir.clone()).await?;
+            let meta = SimpleCast::expand_etherscan_source_to_directory_and_return_metadata(
+                chain,
+                address,
+                api_key,
+                cache_dir.clone(),
+            )
+            .await?;
             let contract_name = &meta.items[0].contract_name;
             let mut path = cache_dir;
             path.push(contract_name);
@@ -533,30 +542,28 @@ async fn main() -> Result<()> {
             };
             println!("build_args: {:#?}", build_args);
 
-        let project = build_args.project()?;
-        let mut contract = ContractInfo {
-            name: contract_name.to_string(),
-            path: Some(path.to_str().expect("path to be valid utf8").to_string()),
-        };
-        let outcome = if let Some(ref mut contract_path) = contract.path {
-            let target_path = canonicalize(&*contract_path)?;
-            *contract_path = target_path.to_string_lossy().to_string();
-            compile::compile_files(&project, vec![target_path], true)
-        } else {
-            compile::suppress_compile(&project)
-        }?;
+            let project = build_args.project()?;
+            let mut contract = ContractInfo {
+                name: contract_name.to_string(),
+                path: Some(path.to_str().expect("path to be valid utf8").to_string()),
+            };
+            let outcome = if let Some(ref mut contract_path) = contract.path {
+                let target_path = canonicalize(&*contract_path)?;
+                *contract_path = target_path.to_string_lossy().to_string();
+                compile::compile_files(&project, vec![target_path], true)
+            } else {
+                compile::suppress_compile(&project)
+            }?;
 
-        // Find the artifact
-        let found_artifact = outcome.find_contract(&contract);
+            // Find the artifact
+            let found_artifact = outcome.find_contract(&contract);
 
-
-        // Unwrap the inner artifact
-        let artifact = found_artifact.ok_or_else(|| {
-            eyre::eyre!("Could not find artifact `{contract}` in the compiled artifacts")
-        })?;
-        println!("storage_layout: {:#?}", artifact.storage_layout);
+            // Unwrap the inner artifact
+            let artifact = found_artifact.ok_or_else(|| {
+                eyre::eyre!("Could not find artifact `{contract}` in the compiled artifacts")
+            })?;
+            println!("storage_layout: {:#?}", artifact.storage_layout);
         }
-
     };
     Ok(())
 }
