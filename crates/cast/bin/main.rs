@@ -8,8 +8,10 @@ use ethers::{
 };
 use eyre::Result;
 use foundry_cli::{handler, prompt, stdin, utils};
+use foundry_cli::opts::CoreBuildArgs;
 use foundry_common::{
     abi::get_event,
+    compile,
     fmt::format_tokens,
     fs,
     selectors::{
@@ -17,6 +19,7 @@ use foundry_common::{
         parse_signatures, pretty_calldata, ParsedSignatures, SelectorImportData,
     },
 };
+use foundry_compilers::{info::ContractInfo, utils::canonicalize};
 use foundry_config::Config;
 use foundry_utils::types::{ToAlloy, ToEthers};
 use std::{path::PathBuf, str::FromStr};
@@ -515,8 +518,37 @@ async fn main() -> Result<()> {
             if !cache_dir.exists()  {
                 fs::create_dir_all(&cache_dir)?;
             }
-            let meta = SimpleCast::expand_etherscan_source_to_directory_and_return_metadata(chain, address, api_key, cache_dir).await?;
-            println!("Contract Name: {}", meta.items[0].contract_name);
+            let meta = SimpleCast::expand_etherscan_source_to_directory_and_return_metadata(chain, address, api_key, cache_dir.clone()).await?;
+            let contract_name = &meta.items[0].contract_name;
+            let mut path = cache_dir;
+            path.push(contract_name);
+            path.push("Contract.sol");
+            let build_args = CoreBuildArgs::default();
+            println!("build_args: {:?}", build_args);
+
+        let project = build_args.project()?;
+        let mut contract = ContractInfo {
+            name: contract_name.to_string(),
+            path: Some(path.to_str().expect("path to be valid utf8").to_string()),
+        };
+        println!("contract: {:?}", contract);
+        let outcome = if let Some(ref mut contract_path) = contract.path {
+            let target_path = canonicalize(&*contract_path)?;
+            *contract_path = target_path.to_string_lossy().to_string();
+            compile::compile_files(&project, vec![target_path], true)
+        } else {
+            compile::suppress_compile(&project)
+        }?;
+
+        // Find the artifact
+        let found_artifact = outcome.find_contract(&contract);
+
+
+        // Unwrap the inner artifact
+        let artifact = found_artifact.ok_or_else(|| {
+            eyre::eyre!("Could not find artifact `{contract}` in the compiled artifacts")
+        })?;
+        println!("storage_layout: {:#?}", artifact.storage_layout);
         }
 
     };

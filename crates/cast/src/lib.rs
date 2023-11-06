@@ -15,7 +15,7 @@ use ethers_core::{
 use ethers_providers::{Middleware, PendingTransaction, PubsubClient};
 use evm_disassembler::{disassemble_bytes, disassemble_str, format_operations};
 use eyre::{Context, ContextCompat, Result};
-use foundry_block_explorers::{errors::EtherscanError, contract::ContractMetadata, Client};
+use foundry_block_explorers::{contract::ContractMetadata, errors::EtherscanError, Client};
 use foundry_common::{abi::encode_function_args, fmt::*, TransactionReceiptWithRevertReason};
 pub use foundry_evm::*;
 use foundry_utils::types::{ToAlloy, ToEthers};
