@@ -15,7 +15,7 @@ use ethers_core::{
 use ethers_providers::{Middleware, PendingTransaction, PubsubClient};
 use evm_disassembler::{disassemble_bytes, disassemble_str, format_operations};
 use eyre::{Context, ContextCompat, Result};
-use foundry_block_explorers::{errors::EtherscanError, Client};
+use foundry_block_explorers::{errors::EtherscanError, contract::ContractMetadata, Client};
 use foundry_common::{abi::encode_function_args, fmt::*, TransactionReceiptWithRevertReason};
 pub use foundry_evm::*;
 use foundry_utils::types::{ToAlloy, ToEthers};
@@ -1899,9 +1899,24 @@ impl SimpleCast {
     ) -> eyre::Result<()> {
         let client = Client::new(chain, etherscan_api_key)?;
         let meta = client.contract_source_code(contract_address.parse()?).await?;
+        println!("Metadata: {:#?}", meta);
         let source_tree = meta.source_tree();
         source_tree.write_to(&output_directory)?;
         Ok(())
+    }
+
+    pub async fn expand_etherscan_source_to_directory_and_return_metadata(
+        chain: Chain,
+        contract_address: String,
+        etherscan_api_key: String,
+        output_directory: PathBuf,
+    ) -> eyre::Result<ContractMetadata> {
+        let client = Client::new(chain, etherscan_api_key)?;
+        let meta = client.contract_source_code(contract_address.parse()?).await?;
+        println!("Metadata: {:#?}", meta);
+        let source_tree = meta.source_tree();
+        source_tree.write_to(&output_directory)?;
+        Ok(meta)
     }
 
     /// Disassembles hex encoded bytecode into individual / human readable opcodes

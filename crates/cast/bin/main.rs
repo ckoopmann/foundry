@@ -19,6 +19,7 @@ use foundry_common::{
 };
 use foundry_config::Config;
 use foundry_utils::types::{ToAlloy, ToEthers};
+use std::{path::PathBuf, str::FromStr};
 use std::time::Instant;
 
 pub mod cmd;
@@ -466,6 +467,10 @@ async fn main() -> Result<()> {
             let chain = chain.named()?;
             match directory {
                 Some(dir) => {
+                    println!(
+                        "Writing to directory `{dir}`",
+                        dir = dir.to_str().unwrap_or_default()
+                    );
                     SimpleCast::expand_etherscan_source_to_directory(chain, address, api_key, dir)
                         .await?
                 }
@@ -506,7 +511,12 @@ async fn main() -> Result<()> {
             let chain = config.chain_id.unwrap_or_default();
             let api_key = config.get_etherscan_api_key(Some(chain)).unwrap_or_default();
             let chain = chain.named()?;
-            println!("{}", SimpleCast::etherscan_source(chain, address, api_key).await?);
+            let cache_dir = PathBuf::from("./storage_slot_cache");
+            if !cache_dir.exists()  {
+                fs::create_dir_all(&cache_dir)?;
+            }
+            let meta = SimpleCast::expand_etherscan_source_to_directory_and_return_metadata(chain, address, api_key, cache_dir).await?;
+            println!("Contract Name: {}", meta.items[0].contract_name);
         }
 
     };
