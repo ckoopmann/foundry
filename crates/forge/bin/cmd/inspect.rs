@@ -63,6 +63,8 @@ impl InspectArgs {
             ..build
         };
 
+        println!("modified_build_args: {:#?}", modified_build_args);
+
         // Build the project
         let project = modified_build_args.project()?;
         let outcome = if let Some(ref mut contract_path) = contract.path {

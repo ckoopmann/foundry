@@ -8,7 +8,7 @@ use ethers::{
 };
 use eyre::Result;
 use foundry_cli::{handler, prompt, stdin, utils};
-use foundry_cli::opts::CoreBuildArgs;
+use foundry_cli::opts::{CompilerArgs, CoreBuildArgs};
 use foundry_common::{
     abi::get_event,
     compile,
@@ -19,6 +19,7 @@ use foundry_common::{
         parse_signatures, pretty_calldata, ParsedSignatures, SelectorImportData,
     },
 };
+use foundry_compilers::artifacts::output_selection::ContractOutputSelection;
 use foundry_compilers::{info::ContractInfo, utils::canonicalize};
 use foundry_config::Config;
 use foundry_utils::types::{ToAlloy, ToEthers};
@@ -523,15 +524,20 @@ async fn main() -> Result<()> {
             let mut path = cache_dir;
             path.push(contract_name);
             path.push("Contract.sol");
-            let build_args = CoreBuildArgs::default();
-            println!("build_args: {:?}", build_args);
+            let build_args = CoreBuildArgs {
+                compiler: CompilerArgs {
+                    extra_output: vec![ContractOutputSelection::StorageLayout],
+                    ..CompilerArgs::default()
+                },
+                ..CoreBuildArgs::default()
+            };
+            println!("build_args: {:#?}", build_args);
 
         let project = build_args.project()?;
         let mut contract = ContractInfo {
             name: contract_name.to_string(),
             path: Some(path.to_str().expect("path to be valid utf8").to_string()),
         };
-        println!("contract: {:?}", contract);
         let outcome = if let Some(ref mut contract_path) = contract.path {
             let target_path = canonicalize(&*contract_path)?;
             *contract_path = target_path.to_string_lossy().to_string();
