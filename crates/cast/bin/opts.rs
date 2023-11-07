@@ -1,7 +1,7 @@
 use crate::cmd::{
     access_list::AccessListArgs, bind::BindArgs, call::CallArgs, create2::Create2Args,
     estimate::EstimateArgs, find_block::FindBlockArgs, interface::InterfaceArgs, logs::LogsArgs,
-    rpc::RpcArgs, run::RunArgs, send::SendTxArgs, storage::StorageArgs, wallet::WalletSubcommands,
+    rpc::RpcArgs, run::RunArgs, send::SendTxArgs, storage::StorageArgs, storage_slot::StorageSlotArgs, wallet::WalletSubcommands,
 };
 use alloy_primitives::{Address, B256, U256};
 use clap::{Parser, Subcommand, ValueHint};
@@ -862,13 +862,7 @@ pub enum Subcommands {
 
     /// Get the storage slot of a given variable
     #[clap(visible_alias = "sts")]
-    StorageSlot {
-        /// The contract's address.
-        address: String,
-
-        #[clap(flatten)]
-        etherscan: EtherscanOpts,
-    },
+    StorageSlot(StorageSlotArgs),
 
 
 }

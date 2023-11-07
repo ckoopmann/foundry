@@ -17,4 +17,5 @@ pub mod rpc;
 pub mod run;
 pub mod send;
 pub mod storage;
+pub mod storage_slot;
 pub mod wallet;
